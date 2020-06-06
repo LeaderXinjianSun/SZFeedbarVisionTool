@@ -33,6 +33,7 @@
         </Grid.RowDefinitions>
         <Menu VerticalAlignment="Center">
             <MenuItem Header="主页" Command="{Binding MenuActionCommand}" CommandParameter="0"></MenuItem>
+            <MenuItem Header="{Binding LoginMenuItemHeader}" Command="{Binding LoginCommand}"></MenuItem>
         </Menu>
         <Views:HomePage Grid.Row="1"></Views:HomePage>
         <StatusBar Grid.Row="2">

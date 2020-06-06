@@ -1,5 +1,8 @@
 ﻿using BingLibrary.hjb.file;
+using ControlzEx.Theming;
 using HalconDotNet;
+using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
 using SXJLibrary;
@@ -10,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace SZFeedbarVisionTool.ViewModels
 {
@@ -82,17 +86,57 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("MessageStr");
             }
         }
+        private string loginMenuItemHeader;
 
+        public string LoginMenuItemHeader
+        {
+            get { return loginMenuItemHeader; }
+            set
+            {
+                loginMenuItemHeader = value;
+                this.RaisePropertyChanged("LoginMenuItemHeader");
+            }
+        }
+        private string halconWindowVisibility;
+
+        public string HalconWindowVisibility
+        {
+            get { return halconWindowVisibility; }
+            set
+            {
+                halconWindowVisibility = value;
+                this.RaisePropertyChanged("HalconWindowVisibility");
+            }
+        }
+        private bool isLogin;
+
+        public bool IsLogin
+        {
+            get { return isLogin; }
+            set
+            {
+                isLogin = value;
+                this.RaisePropertyChanged("IsLogin");
+            }
+        }
         #endregion
         #region 方法绑定
         public DelegateCommand AppLoadedEventCommand { get; set; }
         public DelegateCommand AppClosedEventCommand { get; set; }
+        public DelegateCommand GrabCommand { get; set; }
+        public DelegateCommand ContinueGrabCommand { get; set; }
+        public DelegateCommand ReadImageCommand { set; get; }
+        public DelegateCommand LoginCommand { get; set; }
+        public DelegateCommand<object> SelectIndexCommand { get; set; }
         #endregion
         #region 变量
         bool SystemRunFlag = true;
         private HFramegrabber Framegrabber;
         private string iniParameterPath = System.Environment.CurrentDirectory + "\\Parameter.ini";
         Fx5u Fx5u;
+        HObject newImage;
+        bool isContinueGrab = false;
+        int SelectIndexValue = 0;
         #endregion
         #region 构造函数
         public MainWindowViewModel()
@@ -105,16 +149,15 @@ namespace SZFeedbarVisionTool.ViewModels
             }
             AppLoadedEventCommand = new DelegateCommand(new Action(this.AppLoadedEventCommandExecute));
             AppClosedEventCommand = new DelegateCommand(new Action(this.AppClosedEventCommandExecute));
+            GrabCommand = new DelegateCommand(new Action(this.GrabCommandExecute));
+            ContinueGrabCommand = new DelegateCommand(new Action(this.ContinueGrabCommandExecute));
+            ReadImageCommand = new DelegateCommand(new Action(this.ReadImageCommandExecute));
+            LoginCommand = new DelegateCommand(new Action(this.LoginCommandExecute));
+            SelectIndexCommand = new DelegateCommand<object>(new Action<object>(SelectIndexCommandExecute));
             Init();
         }
         #endregion
-        #region 自定义函数
-        private void Init()
-        {
-            WindowTitle = "SZFeedbarVisionTool20200531";
-            MessageStr = "";
-            StatusPLC = true;
-        }
+        #region 方法绑定函数
         private void AppLoadedEventCommandExecute()
         {
             string plc_ip = Inifile.INIGetStringValue(iniParameterPath, "System", "PLCIP", "192.168.1.13");
@@ -129,6 +172,99 @@ namespace SZFeedbarVisionTool.ViewModels
             SystemRunFlag = false;
             Framegrabber?.Dispose();
         }
+        private void GrabCommandExecute()
+        {
+            isContinueGrab = false;
+            if (newImage != null)
+            {
+                CameraIamge = new HImage(newImage);
+            }
+        }
+        private void ContinueGrabCommandExecute()
+        {
+            isContinueGrab = true;
+        }
+        private void ReadImageCommandExecute()
+        {
+            isContinueGrab = false;
+            System.Windows.Forms.OpenFileDialog ofd = new System.Windows.Forms.OpenFileDialog();
+            ofd.Filter = "Image文件(*.bmp;*.jpg)|*.bmp;*.jpg|所有文件|*.*";
+            ofd.ValidateNames = true;
+            ofd.CheckPathExists = true;
+            ofd.CheckFileExists = true;
+            if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string strFileName = ofd.FileName;
+                HObject image;
+                HOperatorSet.ReadImage(out image, strFileName);
+                CameraIamge = new HImage(image);
+            }
+        }
+        private async void LoginCommandExecute()
+        {
+            if (IsLogin)
+            {
+                IsLogin = false;
+                LoginMenuItemHeader = "登录";
+                AddMessage("已登出");
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+                HalconWindowVisibility = "Collapsed";
+                //var r = await metro.ShowLoginOnlyPassword("请登录");
+                string r = (await ((MetroWindow)Application.Current.MainWindow).ShowLoginAsync("请登录", "输入你的凭证:", new LoginDialogSettings { ColorScheme = MetroDialogColorScheme.Accented , PasswordWatermark = "请输入你的密码", ShouldHideUsername = true }))?.Password;
+                if (r == GetPassWord())
+                {
+                    IsLogin = true;
+                    LoginMenuItemHeader = "登出";
+                }
+                else
+                {
+                    AddMessage("密码错误");
+                }
+                HalconWindowVisibility = "Visible";
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+            }
+        }
+        private void SelectIndexCommandExecute(object p)
+        {
+            switch (p.ToString())
+            {
+                case "0":
+                    SelectIndexValue = 0;
+                    AddMessage("选择1号产品参数");
+                    break;
+                case "1":
+                    SelectIndexValue = 1;
+                    AddMessage("选择2号产品参数");
+                    break;
+                case "2":
+                    SelectIndexValue = 2;
+                    AddMessage("选择3号产品参数");
+                    break;
+                case "3":
+                    SelectIndexValue = 3;
+                    AddMessage("选择4号产品参数");
+                    break;
+                default:
+                    break;
+            }
+        }
+        #endregion
+        #region 自定义函数
+        private void Init()
+        {
+            WindowTitle = "SZFeedbarVisionTool20200606";
+            HalconWindowVisibility = "Visible";
+            LoginMenuItemHeader = "登录";
+            MessageStr = "";
+            IsLogin = false;
+            StatusPLC = true;
+            SelectIndexValue = 0;
+        }
+
+
         private void SystemRun()
         {
             while (SystemRunFlag)
@@ -167,11 +303,14 @@ namespace SZFeedbarVisionTool.ViewModels
 
                     }
 
-                    HObject image;
                     if (StatusCamera)
                     {
-                        HOperatorSet.GrabImageAsync(out image, Framegrabber, -1);
-                        CameraIamge = new HImage(image);
+                        HOperatorSet.GrabImageAsync(out newImage, Framegrabber, -1);
+                        if (isContinueGrab)
+                        {
+                            CameraIamge = new HImage(newImage);
+                        }
+                        GC.Collect();//垃圾回收
                     }
 
                 }
@@ -239,6 +378,19 @@ namespace SZFeedbarVisionTool.ViewModels
                 }
             }
             catch { }
+        }
+        private string GetPassWord()
+        {
+            int day = System.DateTime.Now.Day;
+            int month = System.DateTime.Now.Month;
+            string ss = (day + month).ToString();
+            string passwordstr = "";
+            for (int i = 0; i < 4 - ss.Length; i++)
+            {
+                passwordstr += "0";
+            }
+            passwordstr += ss;
+            return passwordstr;
         }
         #endregion
     }
