@@ -42,7 +42,7 @@
             </Grid>
             <Grid Grid.Row="1" Style="{StaticResource GridLoginStatus}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <RadioButton Content="Ⅰ" Command="{Binding SelectIndexCommand}" CommandParameter="0"></RadioButton>
+                    <RadioButton Content="Ⅰ" Command="{Binding SelectIndexCommand}" CommandParameter="0" IsChecked="True"></RadioButton>
                     <RadioButton Content="Ⅱ" Command="{Binding SelectIndexCommand}" CommandParameter="1"></RadioButton>
                     <RadioButton Content="Ⅲ" Command="{Binding SelectIndexCommand}" CommandParameter="2"></RadioButton>
                     <RadioButton Content="Ⅳ" Command="{Binding SelectIndexCommand}" CommandParameter="3"></RadioButton>

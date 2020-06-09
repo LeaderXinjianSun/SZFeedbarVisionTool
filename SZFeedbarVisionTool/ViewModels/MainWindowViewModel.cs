@@ -645,7 +645,6 @@ namespace SZFeedbarVisionTool.ViewModels
             MessageStr = "";
             IsLogin = false;
             StatusPLC = true;
-            SelectIndexValue = 0;
             try
             {
                 using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json")))
@@ -698,6 +697,9 @@ namespace SZFeedbarVisionTool.ViewModels
                 ParamValue4 = new ParamValue();
                 AddMessage(ex.Message);
             }
+            SelectIndexValue = 0;
+            DistanceDiffValue = ParamValue1.Distance;
+            AngleDiffValue = ParamValue1.Angle;
         }
         private void SystemRun()
         {
@@ -1026,16 +1028,74 @@ namespace SZFeedbarVisionTool.ViewModels
                 double lineAngle4 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
                 AddMessage("下直线距离:" + dist4.D.ToString("F1") + " 角度:" + lineAngle4.ToString("F1"));
                 #endregion
+                #region 找模板上的直线
+                HObject lineRegion0;
+                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "LeftLine.hobj"));
+                HObject imageReduced0;
+                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
+                HObject edges0;
+                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
+                HObject contoursSplit0;
+                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
+                HObject selectedContours0;
+                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
+                HObject unionContours0;
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
+                HTuple rowBegin0, colBegin0, rowEnd0, colEnd0, nr0, nc0, _dist1;
+                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist1);
+                HObject regionLine0;
+                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                index = FindMaxLine(regionLine0);
+                double _lineAngle1 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
+
+                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "TopLine.hobj"));
+                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
+                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
+                HTuple _dist2;
+                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist2);
+                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                index = FindMaxLine(regionLine0);
+                double _lineAngle2 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
+
+                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "RightLine.hobj"));
+                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
+                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
+                HTuple _dist3;
+                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist3);
+                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                index = FindMaxLine(regionLine0);
+                double _lineAngle3 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
+
+                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "BottomLine.hobj"));
+                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
+                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
+                HTuple _dist4;
+                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist4);
+                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                index = FindMaxLine(regionLine0);
+                double _lineAngle4 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
+                #endregion
                 #region 判定
-                //if (Math.Abs(dist1.D - dist3.D) > _dist || Math.Abs(lineAngle1 - lineAngle4) > _angle)
-                //{
-                //    return false;
-                //}
-                //else
-                //{
-                //    return true;
-                //}
-                return true;
+                var delta_d = Math.Abs(dist1.D - dist3.D - _dist1.D + _dist3.D);
+                var delta_a = Math.Abs(lineAngle1 - lineAngle4 - _lineAngle1 + _lineAngle4);
+                AddMessage("距离差:" + delta_d.ToString("F1") + " 角度差:" + delta_a.ToString("F1"));
+                if (delta_d > _dist || delta_a > _angle)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
                 #endregion
             }
             catch (Exception ex)
