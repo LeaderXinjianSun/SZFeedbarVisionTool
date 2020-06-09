@@ -23,6 +23,7 @@ namespace SZFeedbarVisionTool.Views
         public HomePage()
         {
             InitializeComponent();
+            Global.CameraImageViewer = CameraImageViewer;
         }
 
         private void MsgTextBox_TextChanged(object sender, TextChangedEventArgs e)

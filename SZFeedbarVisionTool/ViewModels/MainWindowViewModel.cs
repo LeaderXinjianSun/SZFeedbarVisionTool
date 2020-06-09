@@ -5,6 +5,7 @@ using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
+using Newtonsoft.Json;
 using SXJLibrary;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using ViewROI;
 
 namespace SZFeedbarVisionTool.ViewModels
 {
@@ -119,6 +121,51 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("IsLogin");
             }
         }
+        private double distanceDiffValue;
+
+        public double DistanceDiffValue
+        {
+            get { return distanceDiffValue; }
+            set
+            {
+                distanceDiffValue = value;
+                this.RaisePropertyChanged("DistanceDiffValue");
+            }
+        }
+        private double angleDiffValue;
+
+        public double AngleDiffValue
+        {
+            get { return angleDiffValue; }
+            set
+            {
+                angleDiffValue = value;
+                this.RaisePropertyChanged("AngleDiffValue");
+            }
+        }
+        private HObject cameraAppendHObject;
+
+        public HObject CameraAppendHObject
+        {
+            get { return cameraAppendHObject; }
+            set
+            {
+                cameraAppendHObject = value;
+                this.RaisePropertyChanged("CameraAppendHObject");
+            }
+        }
+        private Tuple<string, object> cameraGCStyle;
+
+        public Tuple<string, object> CameraGCStyle
+        {
+            get { return cameraGCStyle; }
+            set
+            {
+                cameraGCStyle = value;
+                this.RaisePropertyChanged("CameraGCStyle");
+            }
+        }
+
         #endregion
         #region 方法绑定
         public DelegateCommand AppLoadedEventCommand { get; set; }
@@ -128,6 +175,13 @@ namespace SZFeedbarVisionTool.ViewModels
         public DelegateCommand ReadImageCommand { set; get; }
         public DelegateCommand LoginCommand { get; set; }
         public DelegateCommand<object> SelectIndexCommand { get; set; }
+        public DelegateCommand ShapeModelCommand { get; set; }
+        public DelegateCommand LineLeftCommand { get; set; }
+        public DelegateCommand LineTopCommand { get; set; }
+        public DelegateCommand LineRightCommand { get; set; }
+        public DelegateCommand LineBottomCommand { get; set; }
+        public DelegateCommand SaveCommand { get; set; }
+        public DelegateCommand RecognizeCommand { get; set; }
         #endregion
         #region 变量
         bool SystemRunFlag = true;
@@ -137,6 +191,7 @@ namespace SZFeedbarVisionTool.ViewModels
         HObject newImage;
         bool isContinueGrab = false;
         int SelectIndexValue = 0;
+        ParamValue ParamValue1, ParamValue2, ParamValue3, ParamValue4;
         #endregion
         #region 构造函数
         public MainWindowViewModel()
@@ -153,7 +208,14 @@ namespace SZFeedbarVisionTool.ViewModels
             ContinueGrabCommand = new DelegateCommand(new Action(this.ContinueGrabCommandExecute));
             ReadImageCommand = new DelegateCommand(new Action(this.ReadImageCommandExecute));
             LoginCommand = new DelegateCommand(new Action(this.LoginCommandExecute));
-            SelectIndexCommand = new DelegateCommand<object>(new Action<object>(SelectIndexCommandExecute));
+            SelectIndexCommand = new DelegateCommand<object>(new Action<object>(this.SelectIndexCommandExecute));
+            ShapeModelCommand = new DelegateCommand(new Action(this.ShapeModelCommandExecute));
+            LineLeftCommand = new DelegateCommand(new Action(this.LineLeftCommandExecute));
+            LineTopCommand = new DelegateCommand(new Action(this.LineTopCommandExecute));
+            LineRightCommand = new DelegateCommand(new Action(this.LineRightCommandExecute));
+            LineBottomCommand = new DelegateCommand(new Action(this.LineBottomCommandExecute));
+            SaveCommand = new DelegateCommand(new Action(this.SaveCommandExecute));
+            RecognizeCommand = new DelegateCommand(new Action(this.RecognizeCommandExecute));
             Init();
         }
         #endregion
@@ -233,23 +295,345 @@ namespace SZFeedbarVisionTool.ViewModels
             {
                 case "0":
                     SelectIndexValue = 0;
+                    DistanceDiffValue = ParamValue1.Distance;
+                    AngleDiffValue = ParamValue1.Angle;
                     AddMessage("选择1号产品参数");
                     break;
                 case "1":
                     SelectIndexValue = 1;
+                    DistanceDiffValue = ParamValue2.Distance;
+                    AngleDiffValue = ParamValue2.Angle;
                     AddMessage("选择2号产品参数");
                     break;
                 case "2":
                     SelectIndexValue = 2;
+                    DistanceDiffValue = ParamValue3.Distance;
+                    AngleDiffValue = ParamValue3.Angle;
                     AddMessage("选择3号产品参数");
                     break;
                 case "3":
                     SelectIndexValue = 3;
+                    DistanceDiffValue = ParamValue4.Distance;
+                    AngleDiffValue = ParamValue4.Angle;
                     AddMessage("选择4号产品参数");
                     break;
                 default:
                     break;
             }
+        }
+        private async void ShapeModelCommandExecute()
+        {
+            isContinueGrab = false;
+            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+            HalconWindowVisibility = "Collapsed";
+            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
+                "请确认要重新画模板吗？",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "确  认",
+                    NegativeButtonText = "取  消",
+                    ColorScheme = MetroDialogColorScheme.Accented,
+                }) == MessageDialogResult.Affirmative;
+            if (r)
+            {
+                string path = "";
+                switch (SelectIndexValue)
+                {
+                    case 0:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                        break;
+                    case 1:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                        break;
+                    case 2:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                        break;
+                    case 3:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                        break;
+                    default:
+                        break;
+                }
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "green");
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_REGION);
+                HObject ReduceDomainImage;
+                HOperatorSet.ReduceDomain(CameraIamge, roi.getRegion(), out ReduceDomainImage);
+                HObject modelImages, modelRegions;
+                HOperatorSet.InspectShapeModel(ReduceDomainImage, out modelImages, out modelRegions, 7, 30);
+                HObject objectSelected;
+                HOperatorSet.SelectObj(modelRegions, out objectSelected, 1);               
+                CameraAppendHObject = objectSelected;
+                HOperatorSet.WriteRegion(objectSelected, Path.Combine(path, "ModelRegion.hobj"));
+                HTuple ModelID;
+                HOperatorSet.CreateShapeModel(ReduceDomainImage, 7, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), (new HTuple(0.1)).TupleRad(), "no_pregeneration", "use_polarity", 30, 10, out ModelID);
+                HOperatorSet.WriteShapeModel(ModelID, Path.Combine(path, "ShapeModel.shm"));
+                CameraIamge.WriteImage("bmp", 0, Path.Combine(path, "ModelImage.bmp"));
+                AddMessage("创建模板完成");
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+            }
+        }
+        private async void LineLeftCommandExecute()
+        {
+            isContinueGrab = false;
+            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+            HalconWindowVisibility = "Collapsed";
+            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
+                "请确认要重新画左直线吗？",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "确  认",
+                    NegativeButtonText = "取  消",
+                    ColorScheme = MetroDialogColorScheme.Accented,
+                }) == MessageDialogResult.Affirmative;
+            if (r)
+            {
+                string path = "";
+                switch (SelectIndexValue)
+                {
+                    case 0:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                        break;
+                    case 1:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                        break;
+                    case 2:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                        break;
+                    case 3:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                        break;
+                    default:
+                        break;
+                }
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "red");
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
+                CameraAppendHObject = roi.getRegion();
+                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "LeftLine.hobj"));
+                AddMessage("画左直线完成");
+
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+            }
+        }
+        private async void LineTopCommandExecute()
+        {
+            isContinueGrab = false;
+            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+            HalconWindowVisibility = "Collapsed";
+            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
+                "请确认要重新画上直线吗？",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "确  认",
+                    NegativeButtonText = "取  消",
+                    ColorScheme = MetroDialogColorScheme.Accented,
+                }) == MessageDialogResult.Affirmative;
+            if (r)
+            {
+                string path = "";
+                switch (SelectIndexValue)
+                {
+                    case 0:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                        break;
+                    case 1:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                        break;
+                    case 2:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                        break;
+                    case 3:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                        break;
+                    default:
+                        break;
+                }
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "red");
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
+                CameraAppendHObject = roi.getRegion();
+                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "TopLine.hobj"));
+                AddMessage("画上直线完成");
+
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+            }
+        }
+        private async void LineRightCommandExecute()
+        {
+            isContinueGrab = false;
+            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+            HalconWindowVisibility = "Collapsed";
+            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
+                "请确认要重新画右直线吗？",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "确  认",
+                    NegativeButtonText = "取  消",
+                    ColorScheme = MetroDialogColorScheme.Accented,
+                }) == MessageDialogResult.Affirmative;
+            if (r)
+            {
+                string path = "";
+                switch (SelectIndexValue)
+                {
+                    case 0:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                        break;
+                    case 1:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                        break;
+                    case 2:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                        break;
+                    case 3:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                        break;
+                    default:
+                        break;
+                }
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "red");
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
+                CameraAppendHObject = roi.getRegion();
+                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "RightLine.hobj"));
+                AddMessage("画右直线完成");
+
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+            }
+        }
+        private async void LineBottomCommandExecute()
+        {
+            isContinueGrab = false;
+            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
+            HalconWindowVisibility = "Collapsed";
+            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
+                "请确认要重新画下直线吗？",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "确  认",
+                    NegativeButtonText = "取  消",
+                    ColorScheme = MetroDialogColorScheme.Accented,
+                }) == MessageDialogResult.Affirmative;
+            if (r)
+            {
+                string path = "";
+                switch (SelectIndexValue)
+                {
+                    case 0:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                        break;
+                    case 1:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                        break;
+                    case 2:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                        break;
+                    case 3:
+                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                        break;
+                    default:
+                        break;
+                }
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "red");
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
+                CameraAppendHObject = roi.getRegion();
+                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "BottomLine.hobj"));
+                AddMessage("画下直线完成");
+
+            }
+            else
+            {
+                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
+                HalconWindowVisibility = "Visible";
+            }
+        }
+        private void SaveCommandExecute()
+        {
+            string path = "";
+            switch (SelectIndexValue)
+            {
+                case 0:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                    break;
+                case 1:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                    break;
+                case 2:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                    break;
+                case 3:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                    break;
+                default:
+                    break;
+            }
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            switch (SelectIndexValue)
+            {
+                case 0:
+                    ParamValue1.Distance = DistanceDiffValue;
+                    ParamValue1.Angle = AngleDiffValue;
+                    WriteToJson(ParamValue1, Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json"));
+                    AddMessage("保存1号产品参数");
+                    break;
+                case 1:
+                    ParamValue2.Distance = DistanceDiffValue;
+                    ParamValue2.Angle = AngleDiffValue;
+                    WriteToJson(ParamValue2, Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "ParamValue.json"));
+                    AddMessage("保存2号产品参数");
+                    break;
+                case 2:
+                    ParamValue3.Distance = DistanceDiffValue;
+                    ParamValue3.Angle = AngleDiffValue;
+                    WriteToJson(ParamValue3, Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "ParamValue.json"));
+                    AddMessage("保存3号产品参数");
+                    break;
+                case 3:
+                    ParamValue4.Distance = DistanceDiffValue;
+                    ParamValue4.Angle = AngleDiffValue;
+                    WriteToJson(ParamValue4, Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "ParamValue.json"));
+                    AddMessage("保存4号产品参数");
+                    break;
+                default:
+                    break;
+            }
+            
+
+        }
+        private void RecognizeCommandExecute()
+        {
+            RecognizeOpetate(SelectIndexValue);
         }
         #endregion
         #region 自定义函数
@@ -262,18 +646,129 @@ namespace SZFeedbarVisionTool.ViewModels
             IsLogin = false;
             StatusPLC = true;
             SelectIndexValue = 0;
+            try
+            {
+                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    ParamValue1 = JsonConvert.DeserializeObject<ParamValue>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                ParamValue1 = new ParamValue();
+                AddMessage(ex.Message);
+            }
+            try
+            {
+                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "ParamValue.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    ParamValue2 = JsonConvert.DeserializeObject<ParamValue>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                ParamValue2 = new ParamValue();
+                AddMessage(ex.Message);
+            }
+            try
+            {
+                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "ParamValue.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    ParamValue3 = JsonConvert.DeserializeObject<ParamValue>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                ParamValue3 = new ParamValue();
+                AddMessage(ex.Message);
+            }
+            try
+            {
+                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "ParamValue.json")))
+                {
+                    string json = reader.ReadToEnd();
+                    ParamValue4 = JsonConvert.DeserializeObject<ParamValue>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                ParamValue4 = new ParamValue();
+                AddMessage(ex.Message);
+            }
         }
-
-
         private void SystemRun()
         {
             while (SystemRunFlag)
             {
                 System.Threading.Thread.Sleep(100);
-                if (Fx5u.ReadM("M3100"))
+                try
                 {
-                    Fx5u.SetM("M3100", false);
+                    if (Fx5u.ReadM("M6000"))
+                    {
+                        Fx5u.SetMultiM("M6000", new bool[] { false, false, false });
+                        var rst = RecognizeOpetate(0);
+                        Fx5u.SetM("M6002", rst);
+                        Fx5u.SetM("M6001", true);
+                        if (rst)
+                        {
+                            AddMessage("位置1检测成功");
+                        }
+                        else
+                        {
+                            AddMessage("位置1检测失败");
+                        }
+                    }
+                    if (Fx5u.ReadM("M6003"))
+                    {
+                        Fx5u.SetMultiM("M6003", new bool[] { false, false, false });
+                        var rst = RecognizeOpetate(1);
+                        Fx5u.SetM("M6005", rst);
+                        Fx5u.SetM("M6004", true);
+                        if (rst)
+                        {
+                            AddMessage("位置2检测成功");
+                        }
+                        else
+                        {
+                            AddMessage("位置2检测失败");
+                        }
+                    }
+                    if (Fx5u.ReadM("M6006"))
+                    {
+                        Fx5u.SetMultiM("M6006", new bool[] { false, false, false });
+                        var rst = RecognizeOpetate(2);
+                        Fx5u.SetM("M6008", rst);
+                        Fx5u.SetM("M6007", true);
+                        if (rst)
+                        {
+                            AddMessage("位置3检测成功");
+                        }
+                        else
+                        {
+                            AddMessage("位置3检测失败");
+                        }
+                    }
+                    if (Fx5u.ReadM("M6009"))
+                    {
+                        Fx5u.SetMultiM("M6009", new bool[] { false, false, false });
+                        var rst = RecognizeOpetate(3);
+                        Fx5u.SetM("M6011", rst);
+                        Fx5u.SetM("M6010", true);
+                        if (rst)
+                        {
+                            AddMessage("位置4检测成功");
+                        }
+                        else
+                        {
+                            AddMessage("位置4检测失败");
+                        }
+                    }
                 }
+                catch { }
+                
             }
         }
         private void CameraRun()
@@ -305,7 +800,10 @@ namespace SZFeedbarVisionTool.ViewModels
 
                     if (StatusCamera)
                     {
-                        HOperatorSet.GrabImageAsync(out newImage, Framegrabber, -1);
+                        HObject image;
+                        HOperatorSet.GrabImageAsync(out image, Framegrabber, -1);
+                        HObject image2, image3;
+                        HOperatorSet.Decompose3(image, out newImage,out image2,out image3);
                         if (isContinueGrab)
                         {
                             CameraIamge = new HImage(newImage);
@@ -392,6 +890,181 @@ namespace SZFeedbarVisionTool.ViewModels
             passwordstr += ss;
             return passwordstr;
         }
+        private void WriteToJson(object p, string path)
+        {
+            try
+            {
+                using (FileStream fs = File.Open(path, FileMode.Create))
+                using (StreamWriter sw = new StreamWriter(fs))
+                using (JsonWriter jw = new JsonTextWriter(sw))
+                {
+                    jw.Formatting = Formatting.Indented;
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(jw, p);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+            }
+        }
+        private bool RecognizeOpetate(int index)
+        {
+            isContinueGrab = false;
+            string path = "";
+            double _dist = 0,_angle = 0;
+            switch (SelectIndexValue)
+            {
+                case 0:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
+                    _dist = ParamValue1.Distance;
+                    _angle = ParamValue1.Angle;
+                    break;
+                case 1:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
+                    _dist = ParamValue2.Distance;
+                    _angle = ParamValue2.Angle;
+                    break;
+                case 2:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
+                    _dist = ParamValue3.Distance;
+                    _angle = ParamValue3.Angle;
+                    break;
+                case 3:
+                    path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
+                    _dist = ParamValue4.Distance;
+                    _angle = ParamValue4.Angle;
+                    break;
+                default:
+                    break;
+            }
+            try
+            {
+                #region 找模板
+                HObject ModelImage;
+                HOperatorSet.ReadImage(out ModelImage, Path.Combine(path, "ModelImage.bmp"));
+                HTuple ModelID, row, column, angle, score, row1, column1, angle1, score1;
+                HOperatorSet.ReadShapeModel(Path.Combine(path, "ShapeModel.shm"), out ModelID);
+                HOperatorSet.FindShapeModel(ModelImage, ModelID, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), 0.5, 1, 0, "least_squares", 0, 0.9, out row, out column, out angle, out score);
+                HOperatorSet.FindShapeModel(CameraIamge, ModelID, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), 0.5, 1, 0, "least_squares", 0, 0.9, out row1, out column1, out angle1, out score1);
+                HTuple homMat2D;
+                HOperatorSet.VectorAngleToRigid(row, column, angle, row1, column1, angle1, out homMat2D);
+                HObject modelRegion;
+                HOperatorSet.ReadRegion(out modelRegion, Path.Combine(path, "ModelRegion.hobj"));
+                HObject regionAffineTrans;
+                HOperatorSet.AffineTransRegion(modelRegion, out regionAffineTrans, homMat2D, "nearest_neighbor");
+                CameraAppendHObject = null;
+                CameraGCStyle = new Tuple<string, object>("Color", "green");
+                CameraAppendHObject = regionAffineTrans;
+                #endregion
+                #region 找直线
+                HObject lineRegion;
+                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "LeftLine.hobj"));
+                HObject regionLineAffineTrans;
+                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
+                HObject imageReduced1;
+                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
+                HObject edges1;
+                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
+                HObject contoursSplit1;
+                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
+                HObject selectedContours1;
+                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
+                HObject unionContours1;
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
+                HTuple rowBegin1, colBegin1, rowEnd1, colEnd1, nr1, nc1, dist1;
+                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist1);
+                HObject regionLine;
+                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                CameraAppendHObject = regionLine;
+                index = FindMaxLine(regionLine);
+                double lineAngle1 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
+                AddMessage("左直线距离:" + dist1.D.ToString("F1") + " 角度:" + lineAngle1.ToString("F1"));
+
+                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "TopLine.hobj"));
+                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
+                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
+                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
+                HTuple dist2;
+                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist2);
+                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                CameraAppendHObject = regionLine;
+                index = FindMaxLine(regionLine);
+                double lineAngle2 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
+                AddMessage("上直线距离:" + dist2.D.ToString("F1") + " 角度:" + lineAngle2.ToString("F1"));
+
+                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "RightLine.hobj"));
+                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
+                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
+                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
+                HTuple dist3;
+                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist3);
+                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                CameraAppendHObject = regionLine;
+                index = FindMaxLine(regionLine);
+                double lineAngle3 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
+                AddMessage("右直线距离:" + dist3.D.ToString("F1") + " 角度:" + lineAngle3.ToString("F1"));
+
+                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "BottomLine.hobj"));
+                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
+                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
+                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
+                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
+                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
+                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
+                HTuple dist4;
+                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist4);
+                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                CameraAppendHObject = regionLine;
+                index = FindMaxLine(regionLine);
+                double lineAngle4 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
+                AddMessage("下直线距离:" + dist4.D.ToString("F1") + " 角度:" + lineAngle4.ToString("F1"));
+                #endregion
+                #region 判定
+                //if (Math.Abs(dist1.D - dist3.D) > _dist || Math.Abs(lineAngle1 - lineAngle4) > _angle)
+                //{
+                //    return false;
+                //}
+                //else
+                //{
+                //    return true;
+                //}
+                return true;
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.Message);
+                return false;
+            }
+        }
+        private int FindMaxLine(HObject LineRegion)
+        {
+            HTuple area, row, column;
+            HOperatorSet.AreaCenter(LineRegion, out area, out row, out column);
+            HTuple max;
+            HOperatorSet.TupleMax(area, out max);
+
+            for (int i = 0; i < area.LArr.Length; i++)
+            {
+                if (area.LArr[i] == max)
+                {
+                    return i;
+                }
+            }
+            return 0;
+        }
         #endregion
+    }
+    class ParamValue
+    {
+        public double Distance { get; set; }
+        public double Angle { get; set; }
     }
 }
