@@ -71,13 +71,23 @@
                 <Button Grid.Row="2" Style="{StaticResource MahApps.Styles.Button.Square.Accent}" Margin="10" Content="识别" FontSize="24" Command="{Binding RecognizeCommand}"></Button>
                 <StackPanel Orientation="Vertical" Grid.Row="3" Grid.RowSpan="2" Grid.ColumnSpan="3">
                     <StackPanel Orientation="Horizontal" Margin="0,1">
-                        <Label Content="距离差:" Width="50"></Label>
+                        <Label Content="相对距离差:" Width="80"></Label>
                         <TextBox Width="60" Text="{Binding DistanceDiffValue}"></TextBox>
                         <Label Content="Pixel"></Label>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,1">
-                        <Label Content="角度差:" Width="50"></Label>
+                        <Label Content="相对角度差:" Width="80"></Label>
                         <TextBox Width="60" Text="{Binding AngleDiffValue}"></TextBox>
+                        <Label Content="°"></Label>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                        <Label Content="绝对距离差:" Width="80"></Label>
+                        <TextBox Width="60" Text="{Binding DistanceABSDiffValue}"></TextBox>
+                        <Label Content="Pixel"></Label>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                        <Label Content="绝对角度差:" Width="80"></Label>
+                        <TextBox Width="60" Text="{Binding AngleABSDiffValue}"></TextBox>
                         <Label Content="°"></Label>
                     </StackPanel>
                 </StackPanel>

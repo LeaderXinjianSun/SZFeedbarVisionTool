@@ -143,6 +143,29 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("AngleDiffValue");
             }
         }
+        private double distanceABSDiffValue;
+
+        public double DistanceABSDiffValue
+        {
+            get { return distanceABSDiffValue; }
+            set
+            {
+                distanceABSDiffValue = value;
+                this.RaisePropertyChanged("DistanceABSDiffValue");
+            }
+        }
+        private double angleABSDiffValue;
+
+        public double AngleABSDiffValue
+        {
+            get { return angleABSDiffValue; }
+            set
+            {
+                angleABSDiffValue = value;
+                this.RaisePropertyChanged("AngleABSDiffValue");
+            }
+        }
+
         private HObject cameraAppendHObject;
 
         public HObject CameraAppendHObject
@@ -297,24 +320,32 @@ namespace SZFeedbarVisionTool.ViewModels
                     SelectIndexValue = 0;
                     DistanceDiffValue = ParamValue1.Distance;
                     AngleDiffValue = ParamValue1.Angle;
+                    DistanceABSDiffValue = ParamValue1.DistanceABS;
+                    AngleABSDiffValue = ParamValue1.AngleABS;
                     AddMessage("选择1号产品参数");
                     break;
                 case "1":
                     SelectIndexValue = 1;
                     DistanceDiffValue = ParamValue2.Distance;
                     AngleDiffValue = ParamValue2.Angle;
+                    DistanceABSDiffValue = ParamValue2.DistanceABS;
+                    AngleABSDiffValue = ParamValue2.AngleABS;
                     AddMessage("选择2号产品参数");
                     break;
                 case "2":
                     SelectIndexValue = 2;
                     DistanceDiffValue = ParamValue3.Distance;
                     AngleDiffValue = ParamValue3.Angle;
+                    DistanceABSDiffValue = ParamValue3.DistanceABS;
+                    AngleABSDiffValue = ParamValue3.AngleABS;
                     AddMessage("选择3号产品参数");
                     break;
                 case "3":
                     SelectIndexValue = 3;
                     DistanceDiffValue = ParamValue4.Distance;
                     AngleDiffValue = ParamValue4.Angle;
+                    DistanceABSDiffValue = ParamValue4.DistanceABS;
+                    AngleABSDiffValue = ParamValue4.AngleABS;
                     AddMessage("选择4号产品参数");
                     break;
                 default:
@@ -604,24 +635,32 @@ namespace SZFeedbarVisionTool.ViewModels
                 case 0:
                     ParamValue1.Distance = DistanceDiffValue;
                     ParamValue1.Angle = AngleDiffValue;
+                    ParamValue1.DistanceABS = DistanceABSDiffValue;
+                    ParamValue1.AngleABS = AngleABSDiffValue;
                     WriteToJson(ParamValue1, Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json"));
                     AddMessage("保存1号产品参数");
                     break;
                 case 1:
                     ParamValue2.Distance = DistanceDiffValue;
                     ParamValue2.Angle = AngleDiffValue;
+                    ParamValue2.DistanceABS = DistanceABSDiffValue;
+                    ParamValue2.AngleABS = AngleABSDiffValue;
                     WriteToJson(ParamValue2, Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "ParamValue.json"));
                     AddMessage("保存2号产品参数");
                     break;
                 case 2:
                     ParamValue3.Distance = DistanceDiffValue;
                     ParamValue3.Angle = AngleDiffValue;
+                    ParamValue3.DistanceABS = DistanceABSDiffValue;
+                    ParamValue3.AngleABS = AngleABSDiffValue;
                     WriteToJson(ParamValue3, Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "ParamValue.json"));
                     AddMessage("保存3号产品参数");
                     break;
                 case 3:
                     ParamValue4.Distance = DistanceDiffValue;
                     ParamValue4.Angle = AngleDiffValue;
+                    ParamValue4.DistanceABS = DistanceABSDiffValue;
+                    ParamValue4.AngleABS = AngleABSDiffValue;
                     WriteToJson(ParamValue4, Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "ParamValue.json"));
                     AddMessage("保存4号产品参数");
                     break;
@@ -639,7 +678,7 @@ namespace SZFeedbarVisionTool.ViewModels
         #region 自定义函数
         private void Init()
         {
-            WindowTitle = "SZFeedbarVisionTool20200606";
+            WindowTitle = "SZFeedbarVisionTool20200612";
             HalconWindowVisibility = "Visible";
             LoginMenuItemHeader = "登录";
             MessageStr = "";
@@ -700,6 +739,8 @@ namespace SZFeedbarVisionTool.ViewModels
             SelectIndexValue = 0;
             DistanceDiffValue = ParamValue1.Distance;
             AngleDiffValue = ParamValue1.Angle;
+            DistanceABSDiffValue = ParamValue1.DistanceABS;
+            AngleABSDiffValue = ParamValue1.AngleABS;
         }
         private void SystemRun()
         {
@@ -711,6 +752,7 @@ namespace SZFeedbarVisionTool.ViewModels
                     if (Fx5u.ReadM("M6000"))
                     {
                         Fx5u.SetMultiM("M6000", new bool[] { false, false, false });
+                        CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(0);
                         Fx5u.SetM("M6002", rst);
                         Fx5u.SetM("M6001", true);
@@ -726,6 +768,7 @@ namespace SZFeedbarVisionTool.ViewModels
                     if (Fx5u.ReadM("M6003"))
                     {
                         Fx5u.SetMultiM("M6003", new bool[] { false, false, false });
+                        CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(1);
                         Fx5u.SetM("M6005", rst);
                         Fx5u.SetM("M6004", true);
@@ -741,6 +784,7 @@ namespace SZFeedbarVisionTool.ViewModels
                     if (Fx5u.ReadM("M6006"))
                     {
                         Fx5u.SetMultiM("M6006", new bool[] { false, false, false });
+                        CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(2);
                         Fx5u.SetM("M6008", rst);
                         Fx5u.SetM("M6007", true);
@@ -756,6 +800,7 @@ namespace SZFeedbarVisionTool.ViewModels
                     if (Fx5u.ReadM("M6009"))
                     {
                         Fx5u.SetMultiM("M6009", new bool[] { false, false, false });
+                        CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(3);
                         Fx5u.SetM("M6011", rst);
                         Fx5u.SetM("M6010", true);
@@ -914,28 +959,36 @@ namespace SZFeedbarVisionTool.ViewModels
         {
             isContinueGrab = false;
             string path = "";
-            double _dist = 0,_angle = 0;
-            switch (SelectIndexValue)
+            double _dist = 0,_angle = 0, _dist_abs = 0, _angle_abs = 0;
+            switch (index)
             {
                 case 0:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
                     _dist = ParamValue1.Distance;
                     _angle = ParamValue1.Angle;
+                    _dist_abs = ParamValue1.DistanceABS;
+                    _angle_abs = ParamValue1.AngleABS;
                     break;
                 case 1:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
                     _dist = ParamValue2.Distance;
                     _angle = ParamValue2.Angle;
+                    _dist_abs = ParamValue2.DistanceABS;
+                    _angle_abs = ParamValue2.AngleABS;
                     break;
                 case 2:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
                     _dist = ParamValue3.Distance;
                     _angle = ParamValue3.Angle;
+                    _dist_abs = ParamValue3.DistanceABS;
+                    _angle_abs = ParamValue3.AngleABS;
                     break;
                 case 3:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
                     _dist = ParamValue4.Distance;
                     _angle = ParamValue4.Angle;
+                    _dist_abs = ParamValue3.DistanceABS;
+                    _angle_abs = ParamValue3.AngleABS;
                     break;
                 default:
                     break;
@@ -993,8 +1046,10 @@ namespace SZFeedbarVisionTool.ViewModels
                 HTuple dist2;
                 HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist2);
                 HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                HTuple line1Row1 = rowBegin1, line1Column1 = colBegin1, line1Row2 = rowEnd1, line1Column2 = colEnd1;
                 CameraAppendHObject = regionLine;
                 index = FindMaxLine(regionLine);
+                int line1Index = index;
                 double lineAngle2 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
                 AddMessage("上直线距离:" + dist2.D.ToString("F1") + " 角度:" + lineAngle2.ToString("F1"));
 
@@ -1008,8 +1063,10 @@ namespace SZFeedbarVisionTool.ViewModels
                 HTuple dist3;
                 HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist3);
                 HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
+                HTuple line2Row1 = rowBegin1, line2Column1 = colBegin1, line2Row2 = rowEnd1, line2Column2 = colEnd1;
                 CameraAppendHObject = regionLine;
                 index = FindMaxLine(regionLine);
+                int line2Index = index;
                 double lineAngle3 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
                 AddMessage("右直线距离:" + dist3.D.ToString("F1") + " 角度:" + lineAngle3.ToString("F1"));
 
@@ -1027,6 +1084,9 @@ namespace SZFeedbarVisionTool.ViewModels
                 index = FindMaxLine(regionLine);
                 double lineAngle4 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
                 AddMessage("下直线距离:" + dist4.D.ToString("F1") + " 角度:" + lineAngle4.ToString("F1"));
+
+                HTuple insRow, insColum, isOverLapping ;
+                HOperatorSet.IntersectionLines(line1Row1.DArr[line1Index], line1Column1.DArr[line1Index], line1Row2.DArr[line1Index], line1Column2.DArr[line1Index], line2Row1.DArr[line2Index], line2Column1.DArr[line2Index], line2Row2.DArr[line2Index], line2Column2.DArr[line2Index], out insRow, out insColum,out isOverLapping);
                 #endregion
                 #region 找模板上的直线
                 HObject lineRegion0;
@@ -1044,7 +1104,7 @@ namespace SZFeedbarVisionTool.ViewModels
                 HTuple rowBegin0, colBegin0, rowEnd0, colEnd0, nr0, nc0, _dist1;
                 HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist1);
                 HObject regionLine0;
-                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);                
                 index = FindMaxLine(regionLine0);
                 double _lineAngle1 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
 
@@ -1057,7 +1117,9 @@ namespace SZFeedbarVisionTool.ViewModels
                 HTuple _dist2;
                 HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist2);
                 HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                HTuple _line1Row1 = rowBegin0, _line1Column1 = colBegin0, _line1Row2 = rowEnd0, _line1Column2 = colEnd0;
                 index = FindMaxLine(regionLine0);
+                int _line1Index = index;
                 double _lineAngle2 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
 
                 HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "RightLine.hobj"));
@@ -1069,7 +1131,9 @@ namespace SZFeedbarVisionTool.ViewModels
                 HTuple _dist3;
                 HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist3);
                 HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
+                HTuple _line2Row1 = rowBegin0, _line2Column1 = colBegin0, _line2Row2 = rowEnd0, _line2Column2 = colEnd0;
                 index = FindMaxLine(regionLine0);
+                int _line2Index = index;
                 double _lineAngle3 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
 
                 HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "BottomLine.hobj"));
@@ -1083,12 +1147,23 @@ namespace SZFeedbarVisionTool.ViewModels
                 HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
                 index = FindMaxLine(regionLine0);
                 double _lineAngle4 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
+
+                HTuple _insRow, _insColum, _isOverLapping;
+                HOperatorSet.IntersectionLines(_line1Row1.DArr[_line1Index], _line1Column1.DArr[_line1Index], _line1Row2.DArr[_line1Index], _line1Column2.DArr[_line1Index], _line2Row1.DArr[_line2Index], _line2Column1.DArr[_line2Index], _line2Row2.DArr[_line2Index], _line2Column2.DArr[_line2Index], out _insRow, out _insColum, out _isOverLapping);
                 #endregion
                 #region 判定
+                HOperatorSet.SetColor(Global.CameraImageViewer.viewController.viewPort.HalconWindow, "red");
+                HOperatorSet.DispCross(Global.CameraImageViewer.viewController.viewPort.HalconWindow, insRow, insColum, 60, 0);
+                HOperatorSet.SetColor(Global.CameraImageViewer.viewController.viewPort.HalconWindow, "green");
+                HOperatorSet.DispCross(Global.CameraImageViewer.viewController.viewPort.HalconWindow, _insRow, _insColum, 60, 0);
+                HTuple distance;
+                HOperatorSet.DistancePp(insRow, insColum, _insRow, _insColum, out distance);
                 var delta_d = Math.Abs(dist1.D - dist3.D - _dist1.D + _dist3.D);
                 var delta_a = Math.Abs(lineAngle1 - lineAngle4 - _lineAngle1 + _lineAngle4);
-                AddMessage("距离差:" + delta_d.ToString("F1") + " 角度差:" + delta_a.ToString("F1"));
-                if (delta_d > _dist || delta_a > _angle)
+
+                var delta_a_abs = Math.Abs(lineAngle1 - _lineAngle1);
+                AddMessage("相对距离差:" + delta_d.ToString("F1") + " 相对角度差:" + delta_a.ToString("F1") + " 绝对距离差:" + distance.D.ToString("F1") + " 绝对角度差:" + delta_a_abs.ToString("F1"));
+                if (delta_d > _dist || delta_a > _angle || distance.D > _dist_abs || delta_a_abs > _angle_abs)
                 {
                     return false;
                 }
@@ -1126,5 +1201,8 @@ namespace SZFeedbarVisionTool.ViewModels
     {
         public double Distance { get; set; }
         public double Angle { get; set; }
+        public double DistanceABS { get; set; }
+        public double AngleABS { get; set; }
+
     }
 }
