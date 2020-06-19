@@ -49,9 +49,6 @@
     <Reference Include="halcondotnet">
       <HintPath>C:\Program Files\MVTec\HALCON-13.0\bin\dotnet35\halcondotnet.dll</HintPath>
     </Reference>
-    <Reference Include="HalconViewer">
-      <HintPath>..\..\SZVppFilmUI\SZVppFilmUI\bin\Debug\HalconViewer.dll</HintPath>
-    </Reference>
     <Reference Include="HslCommunication">
       <HintPath>..\..\..\..\类库\HslCommunication.dll</HintPath>
     </Reference>
@@ -119,9 +116,6 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="ViewROI">
-      <HintPath>..\..\SZVppFilmUI\SZVppFilmUI\bin\Debug\ViewROI.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -195,7 +189,16 @@
   <ItemGroup>
     <Resource Include="bike_64px_1180471_easyicon.net.ico" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Halcon\HalconViewer\HalconViewer.csproj">
+      <Project>{6d0e5a8c-92c9-415e-90a7-69e418e17f83}</Project>
+      <Name>HalconViewer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Halcon\ViewROI\ViewROI.csproj">
+      <Project>{c4f5c5de-7ea8-47fe-8218-48138f48965f}</Project>
+      <Name>ViewROI</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using SXJLibrary;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using ViewROI;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SZFeedbarVisionTool.ViewModels
 {
@@ -121,48 +123,15 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("IsLogin");
             }
         }
-        private double distanceDiffValue;
+        private int threshold;
 
-        public double DistanceDiffValue
+        public int Threshold
         {
-            get { return distanceDiffValue; }
+            get { return threshold; }
             set
             {
-                distanceDiffValue = value;
-                this.RaisePropertyChanged("DistanceDiffValue");
-            }
-        }
-        private double angleDiffValue;
-
-        public double AngleDiffValue
-        {
-            get { return angleDiffValue; }
-            set
-            {
-                angleDiffValue = value;
-                this.RaisePropertyChanged("AngleDiffValue");
-            }
-        }
-        private double distanceABSDiffValue;
-
-        public double DistanceABSDiffValue
-        {
-            get { return distanceABSDiffValue; }
-            set
-            {
-                distanceABSDiffValue = value;
-                this.RaisePropertyChanged("DistanceABSDiffValue");
-            }
-        }
-        private double angleABSDiffValue;
-
-        public double AngleABSDiffValue
-        {
-            get { return angleABSDiffValue; }
-            set
-            {
-                angleABSDiffValue = value;
-                this.RaisePropertyChanged("AngleABSDiffValue");
+                threshold = value;
+                this.RaisePropertyChanged("Threshold");
             }
         }
 
@@ -188,6 +157,39 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("CameraGCStyle");
             }
         }
+        private ObservableCollection<ROI> rOIList;
+
+        public ObservableCollection<ROI> ROIList
+        {
+            get { return rOIList; }
+            set
+            {
+                rOIList = value;
+                this.RaisePropertyChanged("ROIList");
+            }
+        }
+        private int activeIndex;
+
+        public int ActiveIndex
+        {
+            get { return activeIndex; }
+            set
+            {
+                activeIndex = value;
+                this.RaisePropertyChanged("ActiveIndex");
+            }
+        }
+        private bool repaint;
+
+        public bool Repaint
+        {
+            get { return repaint; }
+            set
+            {
+                repaint = value;
+                this.RaisePropertyChanged("Repaint");
+            }
+        }
 
         #endregion
         #region 方法绑定
@@ -198,13 +200,11 @@ namespace SZFeedbarVisionTool.ViewModels
         public DelegateCommand ReadImageCommand { set; get; }
         public DelegateCommand LoginCommand { get; set; }
         public DelegateCommand<object> SelectIndexCommand { get; set; }
-        public DelegateCommand ShapeModelCommand { get; set; }
-        public DelegateCommand LineLeftCommand { get; set; }
-        public DelegateCommand LineTopCommand { get; set; }
-        public DelegateCommand LineRightCommand { get; set; }
-        public DelegateCommand LineBottomCommand { get; set; }
         public DelegateCommand SaveCommand { get; set; }
         public DelegateCommand RecognizeCommand { get; set; }
+        public DelegateCommand RangeCommand { get; set; }
+        public DelegateCommand BlockCommand { get; set; }
+        public DelegateCommand DeleteCommand { get; set; }
         #endregion
         #region 变量
         bool SystemRunFlag = true;
@@ -232,11 +232,9 @@ namespace SZFeedbarVisionTool.ViewModels
             ReadImageCommand = new DelegateCommand(new Action(this.ReadImageCommandExecute));
             LoginCommand = new DelegateCommand(new Action(this.LoginCommandExecute));
             SelectIndexCommand = new DelegateCommand<object>(new Action<object>(this.SelectIndexCommandExecute));
-            ShapeModelCommand = new DelegateCommand(new Action(this.ShapeModelCommandExecute));
-            LineLeftCommand = new DelegateCommand(new Action(this.LineLeftCommandExecute));
-            LineTopCommand = new DelegateCommand(new Action(this.LineTopCommandExecute));
-            LineRightCommand = new DelegateCommand(new Action(this.LineRightCommandExecute));
-            LineBottomCommand = new DelegateCommand(new Action(this.LineBottomCommandExecute));
+            RangeCommand = new DelegateCommand(new Action(this.RangeCommandExecute));
+            BlockCommand = new DelegateCommand(new Action(this.BlockCommandExecute));
+            DeleteCommand = new DelegateCommand(new Action(this.DeleteCommandExecute));
             SaveCommand = new DelegateCommand(new Action(this.SaveCommandExecute));
             RecognizeCommand = new DelegateCommand(new Action(this.RecognizeCommandExecute));
             Init();
@@ -318,105 +316,48 @@ namespace SZFeedbarVisionTool.ViewModels
             {
                 case "0":
                     SelectIndexValue = 0;
-                    DistanceDiffValue = ParamValue1.Distance;
-                    AngleDiffValue = ParamValue1.Angle;
-                    DistanceABSDiffValue = ParamValue1.DistanceABS;
-                    AngleABSDiffValue = ParamValue1.AngleABS;
+                    Threshold = ParamValue1.Threshold;
+                    ActiveIndex = 0;
+                    ROIList = ParamValue1.ROIList;
+                    ActiveIndex = ROIList.Count > 0 ? ROIList.Count - 1 : 0;
                     AddMessage("选择1号产品参数");
                     break;
                 case "1":
                     SelectIndexValue = 1;
-                    DistanceDiffValue = ParamValue2.Distance;
-                    AngleDiffValue = ParamValue2.Angle;
-                    DistanceABSDiffValue = ParamValue2.DistanceABS;
-                    AngleABSDiffValue = ParamValue2.AngleABS;
+                    Threshold = ParamValue2.Threshold;
+                    ActiveIndex = 0;
+                    ROIList = ParamValue2.ROIList;
+                    ActiveIndex = ROIList.Count > 0 ? ROIList.Count - 1 : 0;
                     AddMessage("选择2号产品参数");
                     break;
                 case "2":
                     SelectIndexValue = 2;
-                    DistanceDiffValue = ParamValue3.Distance;
-                    AngleDiffValue = ParamValue3.Angle;
-                    DistanceABSDiffValue = ParamValue3.DistanceABS;
-                    AngleABSDiffValue = ParamValue3.AngleABS;
+                    Threshold = ParamValue3.Threshold;
+                    ActiveIndex = 0;
+                    ROIList = ParamValue3.ROIList;
+                    ActiveIndex = ROIList.Count > 0 ? ROIList.Count - 1 : 0;
                     AddMessage("选择3号产品参数");
                     break;
                 case "3":
                     SelectIndexValue = 3;
-                    DistanceDiffValue = ParamValue4.Distance;
-                    AngleDiffValue = ParamValue4.Angle;
-                    DistanceABSDiffValue = ParamValue4.DistanceABS;
-                    AngleABSDiffValue = ParamValue4.AngleABS;
+                    Threshold = ParamValue4.Threshold;
+                    ActiveIndex = 0;
+                    ROIList = ParamValue4.ROIList;
+                    ActiveIndex = ROIList.Count > 0 ? ROIList.Count - 1 : 0;
                     AddMessage("选择4号产品参数");
                     break;
                 default:
                     break;
             }
         }
-        private async void ShapeModelCommandExecute()
+       
+        private async void RangeCommandExecute()
         {
             isContinueGrab = false;
             ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
             HalconWindowVisibility = "Collapsed";
             bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
-                "请确认要重新画模板吗？",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
-                {
-                    AffirmativeButtonText = "确  认",
-                    NegativeButtonText = "取  消",
-                    ColorScheme = MetroDialogColorScheme.Accented,
-                }) == MessageDialogResult.Affirmative;
-            if (r)
-            {
-                string path = "";
-                switch (SelectIndexValue)
-                {
-                    case 0:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
-                        break;
-                    case 1:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
-                        break;
-                    case 2:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
-                        break;
-                    case 3:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
-                        break;
-                    default:
-                        break;
-                }
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-                CameraAppendHObject = null;
-                CameraGCStyle = new Tuple<string, object>("Color", "green");
-                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_REGION);
-                HObject ReduceDomainImage;
-                HOperatorSet.ReduceDomain(CameraIamge, roi.getRegion(), out ReduceDomainImage);
-                HObject modelImages, modelRegions;
-                HOperatorSet.InspectShapeModel(ReduceDomainImage, out modelImages, out modelRegions, 7, 30);
-                HObject objectSelected;
-                HOperatorSet.SelectObj(modelRegions, out objectSelected, 1);               
-                CameraAppendHObject = objectSelected;
-                HOperatorSet.WriteRegion(objectSelected, Path.Combine(path, "ModelRegion.hobj"));
-                HTuple ModelID;
-                HOperatorSet.CreateShapeModel(ReduceDomainImage, 7, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), (new HTuple(0.1)).TupleRad(), "no_pregeneration", "use_polarity", 30, 10, out ModelID);
-                HOperatorSet.WriteShapeModel(ModelID, Path.Combine(path, "ShapeModel.shm"));
-                CameraIamge.WriteImage("bmp", 0, Path.Combine(path, "ModelImage.bmp"));
-                AddMessage("创建模板完成");
-            }
-            else
-            {
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-            }
-        }
-        private async void LineLeftCommandExecute()
-        {
-            isContinueGrab = false;
-            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
-            HalconWindowVisibility = "Collapsed";
-            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
-                "请确认要重新画左直线吗？",
+                "请确认要重新画范围吗？",
                 MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
                 {
                     AffirmativeButtonText = "确  认",
@@ -447,10 +388,10 @@ namespace SZFeedbarVisionTool.ViewModels
                 HalconWindowVisibility = "Visible";
                 CameraAppendHObject = null;
                 CameraGCStyle = new Tuple<string, object>("Color", "red");
-                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
+                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE1);
                 CameraAppendHObject = roi.getRegion();
-                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "LeftLine.hobj"));
-                AddMessage("画左直线完成");
+                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "Range.hobj"));
+                AddMessage("画范围完成");
 
             }
             else
@@ -459,152 +400,25 @@ namespace SZFeedbarVisionTool.ViewModels
                 HalconWindowVisibility = "Visible";
             }
         }
-        private async void LineTopCommandExecute()
+        private void BlockCommandExecute()
         {
-            isContinueGrab = false;
-            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
-            HalconWindowVisibility = "Collapsed";
-            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
-                "请确认要重新画上直线吗？",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
-                {
-                    AffirmativeButtonText = "确  认",
-                    NegativeButtonText = "取  消",
-                    ColorScheme = MetroDialogColorScheme.Accented,
-                }) == MessageDialogResult.Affirmative;
-            if (r)
-            {
-                string path = "";
-                switch (SelectIndexValue)
-                {
-                    case 0:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
-                        break;
-                    case 1:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
-                        break;
-                    case 2:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
-                        break;
-                    case 3:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
-                        break;
-                    default:
-                        break;
-                }
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-                CameraAppendHObject = null;
-                CameraGCStyle = new Tuple<string, object>("Color", "red");
-                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
-                CameraAppendHObject = roi.getRegion();
-                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "TopLine.hobj"));
-                AddMessage("画上直线完成");
+            isContinueGrab = false;          
+            ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_LINE);
+            roi.ROIColor = "magenta";
+            roi.SizeEnable = true;
+            ROIList.Add(roi);
+            ActiveIndex = ROIList.Count - 1;
 
-            }
-            else
-            {
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-            }
         }
-        private async void LineRightCommandExecute()
+        private void DeleteCommandExecute()
         {
             isContinueGrab = false;
-            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
-            HalconWindowVisibility = "Collapsed";
-            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
-                "请确认要重新画右直线吗？",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
-                {
-                    AffirmativeButtonText = "确  认",
-                    NegativeButtonText = "取  消",
-                    ColorScheme = MetroDialogColorScheme.Accented,
-                }) == MessageDialogResult.Affirmative;
-            if (r)
+            if (ROIList.Count > 0)
             {
-                string path = "";
-                switch (SelectIndexValue)
-                {
-                    case 0:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
-                        break;
-                    case 1:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
-                        break;
-                    case 2:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
-                        break;
-                    case 3:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
-                        break;
-                    default:
-                        break;
-                }
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-                CameraAppendHObject = null;
-                CameraGCStyle = new Tuple<string, object>("Color", "red");
-                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
-                CameraAppendHObject = roi.getRegion();
-                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "RightLine.hobj"));
-                AddMessage("画右直线完成");
+                ROIList.RemoveAt(ActiveIndex);
+                ActiveIndex = ROIList.Count > 0 ? ROIList.Count - 1 : 0;
+            }
 
-            }
-            else
-            {
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-            }
-        }
-        private async void LineBottomCommandExecute()
-        {
-            isContinueGrab = false;
-            ThemeManager.Current.ChangeTheme(Application.Current, "Light.Red");
-            HalconWindowVisibility = "Collapsed";
-            bool r = await((MetroWindow)Application.Current.MainWindow).ShowMessageAsync("确认",
-                "请确认要重新画下直线吗？",
-                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
-                {
-                    AffirmativeButtonText = "确  认",
-                    NegativeButtonText = "取  消",
-                    ColorScheme = MetroDialogColorScheme.Accented,
-                }) == MessageDialogResult.Affirmative;
-            if (r)
-            {
-                string path = "";
-                switch (SelectIndexValue)
-                {
-                    case 0:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
-                        break;
-                    case 1:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
-                        break;
-                    case 2:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
-                        break;
-                    case 3:
-                        path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
-                        break;
-                    default:
-                        break;
-                }
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-                CameraAppendHObject = null;
-                CameraGCStyle = new Tuple<string, object>("Color", "red");
-                ROI roi = Global.CameraImageViewer.DrawROI(ROI.ROI_TYPE_RECTANGLE2);
-                CameraAppendHObject = roi.getRegion();
-                HOperatorSet.WriteRegion(roi.getRegion(), Path.Combine(path, "BottomLine.hobj"));
-                AddMessage("画下直线完成");
-
-            }
-            else
-            {
-                ThemeManager.Current.ChangeTheme(Application.Current, "Light.Blue");
-                HalconWindowVisibility = "Visible";
-            }
         }
         private void SaveCommandExecute()
         {
@@ -633,35 +447,27 @@ namespace SZFeedbarVisionTool.ViewModels
             switch (SelectIndexValue)
             {
                 case 0:
-                    ParamValue1.Distance = DistanceDiffValue;
-                    ParamValue1.Angle = AngleDiffValue;
-                    ParamValue1.DistanceABS = DistanceABSDiffValue;
-                    ParamValue1.AngleABS = AngleABSDiffValue;
-                    WriteToJson(ParamValue1, Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json"));
+                    ParamValue1.Threshold = Threshold;
+                    ParamValue1.ROIList = ROIList;
+                    SaveParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1\Param.par"), ParamValue1);
                     AddMessage("保存1号产品参数");
                     break;
                 case 1:
-                    ParamValue2.Distance = DistanceDiffValue;
-                    ParamValue2.Angle = AngleDiffValue;
-                    ParamValue2.DistanceABS = DistanceABSDiffValue;
-                    ParamValue2.AngleABS = AngleABSDiffValue;
-                    WriteToJson(ParamValue2, Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "ParamValue.json"));
+                    ParamValue2.Threshold = Threshold;
+                    ParamValue2.ROIList = ROIList;
+                    SaveParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\2\Param.par"), ParamValue2);
                     AddMessage("保存2号产品参数");
                     break;
                 case 2:
-                    ParamValue3.Distance = DistanceDiffValue;
-                    ParamValue3.Angle = AngleDiffValue;
-                    ParamValue3.DistanceABS = DistanceABSDiffValue;
-                    ParamValue3.AngleABS = AngleABSDiffValue;
-                    WriteToJson(ParamValue3, Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "ParamValue.json"));
+                    ParamValue3.Threshold = Threshold;
+                    ParamValue3.ROIList = ROIList;
+                    SaveParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\3\Param.par"), ParamValue3);
                     AddMessage("保存3号产品参数");
                     break;
                 case 3:
-                    ParamValue4.Distance = DistanceDiffValue;
-                    ParamValue4.Angle = AngleDiffValue;
-                    ParamValue4.DistanceABS = DistanceABSDiffValue;
-                    ParamValue4.AngleABS = AngleABSDiffValue;
-                    WriteToJson(ParamValue4, Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "ParamValue.json"));
+                    ParamValue4.Threshold = Threshold;
+                    ParamValue4.ROIList = ROIList;
+                    SaveParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\4\Param.par"), ParamValue4);
                     AddMessage("保存4号产品参数");
                     break;
                 default:
@@ -678,69 +484,20 @@ namespace SZFeedbarVisionTool.ViewModels
         #region 自定义函数
         private void Init()
         {
-            WindowTitle = "SZFeedbarVisionTool20200612";
+            WindowTitle = "SZFeedbarVisionTool20200619";
             HalconWindowVisibility = "Visible";
             LoginMenuItemHeader = "登录";
             MessageStr = "";
             IsLogin = false;
             StatusPLC = true;
-            try
-            {
-                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "ParamValue.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    ParamValue1 = JsonConvert.DeserializeObject<ParamValue>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                ParamValue1 = new ParamValue();
-                AddMessage(ex.Message);
-            }
-            try
-            {
-                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "ParamValue.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    ParamValue2 = JsonConvert.DeserializeObject<ParamValue>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                ParamValue2 = new ParamValue();
-                AddMessage(ex.Message);
-            }
-            try
-            {
-                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "ParamValue.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    ParamValue3 = JsonConvert.DeserializeObject<ParamValue>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                ParamValue3 = new ParamValue();
-                AddMessage(ex.Message);
-            }
-            try
-            {
-                using (StreamReader reader = new StreamReader(Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "ParamValue.json")))
-                {
-                    string json = reader.ReadToEnd();
-                    ParamValue4 = JsonConvert.DeserializeObject<ParamValue>(json);
-                }
-            }
-            catch (Exception ex)
-            {
-                ParamValue4 = new ParamValue();
-                AddMessage(ex.Message);
-            }
+
+            ParamValue1 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "Param.par"));
+            ParamValue2 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "Param.par"));
+            ParamValue3 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "Param.par"));
+            ParamValue4 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "Param.par"));
             SelectIndexValue = 0;
-            DistanceDiffValue = ParamValue1.Distance;
-            AngleDiffValue = ParamValue1.Angle;
-            DistanceABSDiffValue = ParamValue1.DistanceABS;
-            AngleABSDiffValue = ParamValue1.AngleABS;
+            Threshold = ParamValue1.Threshold;
+            ROIList = ParamValue1.ROIList;
         }
         private void SystemRun()
         {
@@ -959,218 +716,81 @@ namespace SZFeedbarVisionTool.ViewModels
         {
             isContinueGrab = false;
             string path = "";
-            double _dist = 0,_angle = 0, _dist_abs = 0, _angle_abs = 0;
+            double _threshold = 0;
             switch (index)
             {
                 case 0:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\1");
-                    _dist = ParamValue1.Distance;
-                    _angle = ParamValue1.Angle;
-                    _dist_abs = ParamValue1.DistanceABS;
-                    _angle_abs = ParamValue1.AngleABS;
+                    _threshold = ParamValue1.Threshold;
+                    ROIList = ParamValue1.ROIList;
                     break;
                 case 1:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\2");
-                    _dist = ParamValue2.Distance;
-                    _angle = ParamValue2.Angle;
-                    _dist_abs = ParamValue2.DistanceABS;
-                    _angle_abs = ParamValue2.AngleABS;
+                    _threshold = ParamValue2.Threshold;
+                    ROIList = ParamValue2.ROIList;
                     break;
                 case 2:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\3");
-                    _dist = ParamValue3.Distance;
-                    _angle = ParamValue3.Angle;
-                    _dist_abs = ParamValue3.DistanceABS;
-                    _angle_abs = ParamValue3.AngleABS;
+                    _threshold = ParamValue3.Threshold;
+                    ROIList = ParamValue3.ROIList;
                     break;
                 case 3:
                     path = Path.Combine(System.Environment.CurrentDirectory, @"Camera\4");
-                    _dist = ParamValue4.Distance;
-                    _angle = ParamValue4.Angle;
-                    _dist_abs = ParamValue3.DistanceABS;
-                    _angle_abs = ParamValue3.AngleABS;
+                    _threshold = ParamValue4.Threshold;
+                    ROIList = ParamValue4.ROIList;
                     break;
                 default:
                     break;
             }
+            ActiveIndex = -1;
+            foreach (var item in ROIList)
+            {
+                item.ROIColor = "magenta";
+            }
+            //Repaint = !Repaint;
             try
             {
-                #region 找模板
-                HObject ModelImage;
-                HOperatorSet.ReadImage(out ModelImage, Path.Combine(path, "ModelImage.bmp"));
-                HTuple ModelID, row, column, angle, score, row1, column1, angle1, score1;
-                HOperatorSet.ReadShapeModel(Path.Combine(path, "ShapeModel.shm"), out ModelID);
-                HOperatorSet.FindShapeModel(ModelImage, ModelID, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), 0.5, 1, 0, "least_squares", 0, 0.9, out row, out column, out angle, out score);
-                HOperatorSet.FindShapeModel(CameraIamge, ModelID, (new HTuple(-45)).TupleRad(), (new HTuple(90)).TupleRad(), 0.5, 1, 0, "least_squares", 0, 0.9, out row1, out column1, out angle1, out score1);
-                HTuple homMat2D;
-                HOperatorSet.VectorAngleToRigid(row, column, angle, row1, column1, angle1, out homMat2D);
-                HObject modelRegion;
-                HOperatorSet.ReadRegion(out modelRegion, Path.Combine(path, "ModelRegion.hobj"));
-                HObject regionAffineTrans;
-                HOperatorSet.AffineTransRegion(modelRegion, out regionAffineTrans, homMat2D, "nearest_neighbor");
+                #region 图像处理
+                HObject range;
+                HOperatorSet.ReadRegion(out range, Path.Combine(path, "Range.hobj"));
+                HObject imageReduced;
+                HOperatorSet.ReduceDomain(CameraIamge, range, out imageReduced);
+                HObject pregion;
+                HOperatorSet.Threshold(imageReduced, out pregion, 0, _threshold);
+                HObject regionFillUp;
+                HOperatorSet.FillUp(pregion,out regionFillUp);
+                HObject connectedRegions;
+                HOperatorSet.Connection(regionFillUp,out connectedRegions);
+                HObject selectedRegions;
+                HOperatorSet.SelectShapeStd(connectedRegions,out selectedRegions, "max_area", 70);
+
+                CameraGCStyle = new Tuple<string, object>("DrawMode", "fill");
+                CameraGCStyle = new Tuple<string, object>("Color", "blue");
                 CameraAppendHObject = null;
-                CameraGCStyle = new Tuple<string, object>("Color", "green");
-                CameraAppendHObject = regionAffineTrans;
-                #endregion
-                #region 找直线
-                HObject lineRegion;
-                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "LeftLine.hobj"));
-                HObject regionLineAffineTrans;
-                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
-                HObject imageReduced1;
-                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
-                HObject edges1;
-                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
-                HObject contoursSplit1;
-                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
-                HObject selectedContours1;
-                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
-                HObject unionContours1;
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
-                HTuple rowBegin1, colBegin1, rowEnd1, colEnd1, nr1, nc1, dist1;
-                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist1);
-                HObject regionLine;
-                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
-                CameraAppendHObject = regionLine;
-                index = FindMaxLine(regionLine);
-                double lineAngle1 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
-                AddMessage("左直线距离:" + dist1.D.ToString("F1") + " 角度:" + lineAngle1.ToString("F1"));
-
-                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "TopLine.hobj"));
-                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
-                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
-                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
-                HTuple dist2;
-                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist2);
-                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
-                HTuple line1Row1 = rowBegin1, line1Column1 = colBegin1, line1Row2 = rowEnd1, line1Column2 = colEnd1;
-                CameraAppendHObject = regionLine;
-                index = FindMaxLine(regionLine);
-                int line1Index = index;
-                double lineAngle2 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
-                AddMessage("上直线距离:" + dist2.D.ToString("F1") + " 角度:" + lineAngle2.ToString("F1"));
-
-                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "RightLine.hobj"));
-                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
-                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
-                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
-                HTuple dist3;
-                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist3);
-                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
-                HTuple line2Row1 = rowBegin1, line2Column1 = colBegin1, line2Row2 = rowEnd1, line2Column2 = colEnd1;
-                CameraAppendHObject = regionLine;
-                index = FindMaxLine(regionLine);
-                int line2Index = index;
-                double lineAngle3 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
-                AddMessage("右直线距离:" + dist3.D.ToString("F1") + " 角度:" + lineAngle3.ToString("F1"));
-
-                HOperatorSet.ReadRegion(out lineRegion, Path.Combine(path, "BottomLine.hobj"));
-                HOperatorSet.AffineTransRegion(lineRegion, out regionLineAffineTrans, homMat2D, "nearest_neighbor");
-                HOperatorSet.ReduceDomain(CameraIamge, regionLineAffineTrans, out imageReduced1);
-                HOperatorSet.EdgesSubPix(imageReduced1, out edges1, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges1, out contoursSplit1, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit1, out selectedContours1, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours1, out unionContours1, 10, 1, "attr_keep");
-                HTuple dist4;
-                HOperatorSet.FitLineContourXld(unionContours1, "tukey", -1, 0, 5, 2, out rowBegin1, out colBegin1, out rowEnd1, out colEnd1, out nr1, out nc1, out dist4);
-                HOperatorSet.GenRegionLine(out regionLine, rowBegin1, colBegin1, rowEnd1, colEnd1);
-                CameraAppendHObject = regionLine;
-                index = FindMaxLine(regionLine);
-                double lineAngle4 = Math.Atan2((nc1.DArr[index]), (nr1.DArr[index])) * 180 / Math.PI - 90;
-                AddMessage("下直线距离:" + dist4.D.ToString("F1") + " 角度:" + lineAngle4.ToString("F1"));
-
-                HTuple insRow, insColum, isOverLapping ;
-                HOperatorSet.IntersectionLines(line1Row1.DArr[line1Index], line1Column1.DArr[line1Index], line1Row2.DArr[line1Index], line1Column2.DArr[line1Index], line2Row1.DArr[line2Index], line2Column1.DArr[line2Index], line2Row2.DArr[line2Index], line2Column2.DArr[line2Index], out insRow, out insColum,out isOverLapping);
-                #endregion
-                #region 找模板上的直线
-                HObject lineRegion0;
-                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "LeftLine.hobj"));
-                HObject imageReduced0;
-                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
-                HObject edges0;
-                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
-                HObject contoursSplit0;
-                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
-                HObject selectedContours0;
-                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
-                HObject unionContours0;
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
-                HTuple rowBegin0, colBegin0, rowEnd0, colEnd0, nr0, nc0, _dist1;
-                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist1);
-                HObject regionLine0;
-                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);                
-                index = FindMaxLine(regionLine0);
-                double _lineAngle1 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
-
-                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "TopLine.hobj"));
-                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
-                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
-                HTuple _dist2;
-                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist2);
-                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
-                HTuple _line1Row1 = rowBegin0, _line1Column1 = colBegin0, _line1Row2 = rowEnd0, _line1Column2 = colEnd0;
-                index = FindMaxLine(regionLine0);
-                int _line1Index = index;
-                double _lineAngle2 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
-
-                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "RightLine.hobj"));
-                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
-                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
-                HTuple _dist3;
-                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist3);
-                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
-                HTuple _line2Row1 = rowBegin0, _line2Column1 = colBegin0, _line2Row2 = rowEnd0, _line2Column2 = colEnd0;
-                index = FindMaxLine(regionLine0);
-                int _line2Index = index;
-                double _lineAngle3 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
-
-                HOperatorSet.ReadRegion(out lineRegion0, Path.Combine(path, "BottomLine.hobj"));
-                HOperatorSet.ReduceDomain(ModelImage, lineRegion0, out imageReduced0);
-                HOperatorSet.EdgesSubPix(imageReduced0, out edges0, "canny", 1, 20, 40);
-                HOperatorSet.SegmentContoursXld(edges0, out contoursSplit0, "lines_circles", 5, 4, 2);
-                HOperatorSet.SelectContoursXld(contoursSplit0, out selectedContours0, "contour_length", 15, 500, -0.5, 0.5);
-                HOperatorSet.UnionAdjacentContoursXld(selectedContours0, out unionContours0, 10, 1, "attr_keep");
-                HTuple _dist4;
-                HOperatorSet.FitLineContourXld(unionContours0, "tukey", -1, 0, 5, 2, out rowBegin0, out colBegin0, out rowEnd0, out colEnd0, out nr0, out nc0, out _dist4);
-                HOperatorSet.GenRegionLine(out regionLine0, rowBegin0, colBegin0, rowEnd0, colEnd0);
-                index = FindMaxLine(regionLine0);
-                double _lineAngle4 = Math.Atan2((nc0.DArr[index]), (nr0.DArr[index])) * 180 / Math.PI - 90;
-
-                HTuple _insRow, _insColum, _isOverLapping;
-                HOperatorSet.IntersectionLines(_line1Row1.DArr[_line1Index], _line1Column1.DArr[_line1Index], _line1Row2.DArr[_line1Index], _line1Column2.DArr[_line1Index], _line2Row1.DArr[_line2Index], _line2Column1.DArr[_line2Index], _line2Row2.DArr[_line2Index], _line2Column2.DArr[_line2Index], out _insRow, out _insColum, out _isOverLapping);
+                CameraAppendHObject = selectedRegions;
+                bool result = true;
+                foreach (var item in ROIList)
+                {
+                    HObject regionIntersection;
+                    HOperatorSet.Intersection(selectedRegions, item.getRegion(), out regionIntersection);
+                    HTuple area, row, column;
+                    HOperatorSet.AreaCenter(regionIntersection,out area,out row,out column);
+                    
+                    if (area > 0)
+                    {
+                        item.ROIColor = "red";
+                        result = false;
+                    }
+                    else
+                    {
+                        item.ROIColor = "green";
+                    }
+                }
+                Repaint = !Repaint;
                 #endregion
                 #region 判定
-                HOperatorSet.SetColor(Global.CameraImageViewer.viewController.viewPort.HalconWindow, "red");
-                HOperatorSet.DispCross(Global.CameraImageViewer.viewController.viewPort.HalconWindow, insRow, insColum, 60, 0);
-                HOperatorSet.SetColor(Global.CameraImageViewer.viewController.viewPort.HalconWindow, "green");
-                HOperatorSet.DispCross(Global.CameraImageViewer.viewController.viewPort.HalconWindow, _insRow, _insColum, 60, 0);
-                HTuple distance;
-                HOperatorSet.DistancePp(insRow, insColum, _insRow, _insColum, out distance);
-                var delta_d = Math.Abs(dist1.D - dist3.D - _dist1.D + _dist3.D);
-                var delta_a = Math.Abs(lineAngle1 - lineAngle4 - _lineAngle1 + _lineAngle4);
 
-                var delta_a_abs = Math.Abs(lineAngle1 - _lineAngle1);
-                AddMessage("相对距离差:" + delta_d.ToString("F1") + " 相对角度差:" + delta_a.ToString("F1") + " 绝对距离差:" + distance.D.ToString("F1") + " 绝对角度差:" + delta_a_abs.ToString("F1"));
-                if (delta_d > _dist || delta_a > _angle || distance.D > _dist_abs || delta_a_abs > _angle_abs)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+                return result;
                 #endregion
             }
             catch (Exception ex)
@@ -1195,14 +815,52 @@ namespace SZFeedbarVisionTool.ViewModels
             }
             return 0;
         }
+        private ParamValue LoadParam(string filePath)
+        {
+            ParamValue _DefaultJob = null;
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    BinaryFormatter mBinFmat = new BinaryFormatter();
+                    _DefaultJob = mBinFmat.Deserialize(fileStream) as ParamValue;
+                    fileStream.Close();
+                }
+                catch (Exception ex)
+                {
+                    _DefaultJob = new ParamValue();
+                    AddMessage(ex.Message);
+                }
+            }
+            else
+            {
+                _DefaultJob = new ParamValue();
+            }
+            return _DefaultJob;
+        }
+        private void SaveParam(string filePath, ParamValue param)
+        {
+            try
+            {
+                FileStream fileStream = new FileStream(filePath, FileMode.Create);
+                BinaryFormatter b = new BinaryFormatter();
+                b.Serialize(fileStream, param);
+                fileStream.Close();
+            }
+            catch { }
+        }
         #endregion
     }
-    class ParamValue
+    [Serializable]
+    public class ParamValue
     {
-        public double Distance { get; set; }
-        public double Angle { get; set; }
-        public double DistanceABS { get; set; }
-        public double AngleABS { get; set; }
-
+        public ParamValue()
+        {
+            Threshold = 128;
+            ROIList = new ObservableCollection<ROI>();
+        }
+        public int Threshold { get; set; }
+        public ObservableCollection<ROI> ROIList { get; set; }
     }
 }
