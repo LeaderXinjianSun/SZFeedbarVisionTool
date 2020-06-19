@@ -190,7 +190,26 @@ namespace SZFeedbarVisionTool.ViewModels
                 this.RaisePropertyChanged("Repaint");
             }
         }
-
+        private int selectIndexValue;
+        public int SelectIndexValue
+        {
+            get { return selectIndexValue; }
+            set
+            {
+                selectIndexValue = value;
+                this.RaisePropertyChanged("SelectIndexValue");
+            }
+        }
+        private ObservableCollection<bool> radioButtonIsChecked;
+        public ObservableCollection<bool> RadioButtonIsChecked
+        {
+            get { return radioButtonIsChecked; }
+            set
+            {
+                radioButtonIsChecked = value;
+                this.RaisePropertyChanged("RadioButtonIsChecked");
+            }
+        }
         #endregion
         #region 方法绑定
         public DelegateCommand AppLoadedEventCommand { get; set; }
@@ -213,7 +232,6 @@ namespace SZFeedbarVisionTool.ViewModels
         Fx5u Fx5u;
         HObject newImage;
         bool isContinueGrab = false;
-        int SelectIndexValue = 0;
         ParamValue ParamValue1, ParamValue2, ParamValue3, ParamValue4;
         #endregion
         #region 构造函数
@@ -490,12 +508,17 @@ namespace SZFeedbarVisionTool.ViewModels
             MessageStr = "";
             IsLogin = false;
             StatusPLC = true;
-
+            RadioButtonIsChecked = new ObservableCollection<bool>();
+            for (int i = 0; i < 4; i++)
+            {
+                RadioButtonIsChecked.Add(false);
+            }
             ParamValue1 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\1", "Param.par"));
             ParamValue2 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\2", "Param.par"));
             ParamValue3 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\3", "Param.par"));
             ParamValue4 = LoadParam(Path.Combine(System.Environment.CurrentDirectory, @"Camera\4", "Param.par"));
             SelectIndexValue = 0;
+            RadioButtonIsChecked[SelectIndexValue] = true;
             Threshold = ParamValue1.Threshold;
             ROIList = ParamValue1.ROIList;
         }
@@ -508,6 +531,8 @@ namespace SZFeedbarVisionTool.ViewModels
                 {
                     if (Fx5u.ReadM("M6000"))
                     {
+                        SelectIndexValue = 0;
+                        RadioButtonIsChecked[SelectIndexValue] = true;
                         Fx5u.SetMultiM("M6000", new bool[] { false, false, false });
                         CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(0);
@@ -524,6 +549,8 @@ namespace SZFeedbarVisionTool.ViewModels
                     }
                     if (Fx5u.ReadM("M6003"))
                     {
+                        SelectIndexValue = 1;
+                        RadioButtonIsChecked[SelectIndexValue] = true;
                         Fx5u.SetMultiM("M6003", new bool[] { false, false, false });
                         CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(1);
@@ -540,6 +567,8 @@ namespace SZFeedbarVisionTool.ViewModels
                     }
                     if (Fx5u.ReadM("M6006"))
                     {
+                        SelectIndexValue = 2;
+                        RadioButtonIsChecked[SelectIndexValue] = true;
                         Fx5u.SetMultiM("M6006", new bool[] { false, false, false });
                         CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(2);
@@ -556,6 +585,8 @@ namespace SZFeedbarVisionTool.ViewModels
                     }
                     if (Fx5u.ReadM("M6009"))
                     {
+                        SelectIndexValue = 3;
+                        RadioButtonIsChecked[SelectIndexValue] = true;
                         Fx5u.SetMultiM("M6009", new bool[] { false, false, false });
                         CameraIamge = new HImage(newImage);
                         var rst = RecognizeOpetate(3);

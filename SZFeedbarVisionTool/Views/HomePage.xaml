@@ -41,12 +41,16 @@
                 <Button Grid.Column="2" Style="{StaticResource MahApps.Styles.Button.Square.Accent}" Margin="10" Content="连续" FontSize="24" Command="{Binding ContinueGrabCommand}"></Button>
             </Grid>
             <Grid Grid.Row="1" Style="{StaticResource GridLoginStatus}">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <RadioButton Content="Ⅰ" Command="{Binding SelectIndexCommand}" CommandParameter="0" IsChecked="True"></RadioButton>
-                    <RadioButton Content="Ⅱ" Command="{Binding SelectIndexCommand}" CommandParameter="1"></RadioButton>
-                    <RadioButton Content="Ⅲ" Command="{Binding SelectIndexCommand}" CommandParameter="2"></RadioButton>
-                    <RadioButton Content="Ⅳ" Command="{Binding SelectIndexCommand}" CommandParameter="3"></RadioButton>
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <RadioButton Content="Ⅰ" Command="{Binding SelectIndexCommand}" CommandParameter="0" IsChecked="{Binding RadioButtonIsChecked[0],Mode=TwoWay}"></RadioButton>
+                        <RadioButton Content="Ⅱ" Command="{Binding SelectIndexCommand}" CommandParameter="1" IsChecked="{Binding RadioButtonIsChecked[1],Mode=TwoWay}"></RadioButton>
+                        <RadioButton Content="Ⅲ" Command="{Binding SelectIndexCommand}" CommandParameter="2" IsChecked="{Binding RadioButtonIsChecked[2],Mode=TwoWay}"></RadioButton>
+                        <RadioButton Content="Ⅳ" Command="{Binding SelectIndexCommand}" CommandParameter="3" IsChecked="{Binding RadioButtonIsChecked[3],Mode=TwoWay}"></RadioButton>
+                    </StackPanel>
+                    <TextBox Width="60" HorizontalContentAlignment="Center" IsReadOnly="True" Text="{Binding SelectIndexValue}" HorizontalAlignment="Right" Margin="0,5,5,0"></TextBox>
                 </StackPanel>
+
             </Grid>
             <Grid Grid.Row="2" Style="{StaticResource GridLoginStatus}">
                 <Grid.RowDefinitions>
